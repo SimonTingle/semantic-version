@@ -1,5 +1,6 @@
 import { fetchCommits } from './github';
 import { classifyHeuristic } from './heuristic';
+import { classifyByKeywords } from './inference';
 import { classifyWithAI } from './ai';
 import { computeVersion } from './semver';
 import type { Bump, ClassifiedCommit, RawCommit, ScanResult } from './types';
@@ -26,7 +27,8 @@ export async function runScan(args: RunScanArgs): Promise<ScanResult> {
   });
 
   const cached = await loadCache(fullName, commits.map((c) => c.sha));
-  const toClassifyByAI: RawCommit[] = [];
+  const aiCandidates: RawCommit[] = [];
+  const aiEnabled = Boolean(process.env.ANTHROPIC_API_KEY);
 
   const partial: ClassifiedCommit[] = commits.map((c) => {
     const cachedBump = cached.get(c.sha);
@@ -35,28 +37,28 @@ export async function runScan(args: RunScanArgs): Promise<ScanResult> {
     const h = classifyHeuristic(c);
     if (h.matched && h.bump) return { ...c, bump: h.bump, source: 'heuristic' };
 
-    toClassifyByAI.push(c);
-    return { ...c, bump: 'patch', source: 'ai' }; // placeholder, filled below
+    const inf = classifyByKeywords(c);
+    // If the LLM is available, escalate only the low-confidence commits.
+    if (aiEnabled && inf.confidence === 'low') aiCandidates.push(c);
+    return { ...c, bump: inf.bump, source: 'inference', rationale: inf.rule };
   });
 
   let aiCalls = 0;
-  if (toClassifyByAI.length > 0) {
-    const aiMap = await classifyWithAI(toClassifyByAI);
-    aiCalls = toClassifyByAI.length;
+  if (aiCandidates.length > 0) {
+    const aiMap = await classifyWithAI(aiCandidates);
+    aiCalls = aiCandidates.length;
     for (const c of partial) {
-      if (c.source === 'ai') {
-        const b = aiMap.get(c.sha);
-        if (b) c.bump = b;
-      }
+      const aiBump = aiMap.get(c.sha);
+      if (aiBump) { c.bump = aiBump; c.source = 'ai'; c.rationale = 'llm-fallback'; }
     }
   }
 
-  // Persist new classifications (heuristic + ai). Ignore cache hits.
+  // Persist new classifications (heuristic + inference + ai). Ignore cache hits.
   await saveCache(
     fullName,
     partial
       .filter((c) => c.source !== 'cache')
-      .map((c) => ({ sha: c.sha, bump: c.bump, source: c.source as 'heuristic' | 'ai', message: c.message })),
+      .map((c) => ({ sha: c.sha, bump: c.bump, source: c.source as 'heuristic' | 'inference' | 'ai', message: c.message })),
   );
 
   const { finalVersion, timeline } = computeVersion(partial);
@@ -91,7 +93,7 @@ async function loadCache(fullName: string, shas: string[]): Promise<Map<string, 
 
 async function saveCache(
   fullName: string,
-  rows: { sha: string; bump: Bump; source: 'heuristic' | 'ai'; message: string }[],
+  rows: { sha: string; bump: Bump; source: 'heuristic' | 'inference' | 'ai'; message: string }[],
 ) {
   if (rows.length === 0) return;
   const db = supabaseAdmin();

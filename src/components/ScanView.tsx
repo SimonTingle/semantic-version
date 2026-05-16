@@ -142,18 +142,20 @@ function ScanProgress() {
 }
 
 function VersionDisplay({ result }: { result: ScanResult }) {
-  const cached = result.classifications.filter((c) => c.source === 'cache').length;
+  const counts = { cache: 0, heuristic: 0, inference: 0, ai: 0 };
+  for (const c of result.classifications) counts[c.source] += 1;
   return (
     <div className="animate-fade-in">
       <p className="text-sm text-ink-400">Inferred semantic version</p>
       <p className="mt-1 font-mono tabular text-5xl sm:text-7xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-accent-400 via-cyan-300 to-accent-400 word-break">
         {result.inferredVersion}
       </p>
-      <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+      <div className="mt-5 grid grid-cols-2 sm:grid-cols-5 gap-3 text-sm">
         <Stat label="Commits" value={result.commitsAnalyzed.toLocaleString()} />
-        <Stat label="AI calls" value={result.aiCalls.toLocaleString()} />
-        <Stat label="From cache" value={cached.toLocaleString()} />
-        <Stat label="Releases" value={result.timeline.length.toLocaleString()} />
+        <Stat label="Conventional" value={counts.heuristic.toLocaleString()} />
+        <Stat label="Inferred" value={counts.inference.toLocaleString()} title="Deterministic keyword classifier (no LLM call)." />
+        <Stat label="AI calls" value={counts.ai.toLocaleString()} />
+        <Stat label="From cache" value={counts.cache.toLocaleString()} />
       </div>
       {result.truncated && (
         <p className="mt-4 text-xs text-amber-300/90">
@@ -164,9 +166,9 @@ function VersionDisplay({ result }: { result: ScanResult }) {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, title }: { label: string; value: string; title?: string }) {
   return (
-    <div className="rounded-xl border border-ink-800 bg-ink-900/60 px-3 py-2.5">
+    <div className="rounded-xl border border-ink-800 bg-ink-900/60 px-3 py-2.5" title={title}>
       <p className="text-[10px] uppercase tracking-wider text-ink-400">{label}</p>
       <p className="text-base font-medium tabular">{value}</p>
     </div>

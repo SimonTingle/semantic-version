@@ -92,7 +92,8 @@ Still in Supabase **Authentication**:
 4. Paste into the editor → **Run** (Ctrl+Enter)
 5. Wait for success message
 6. Create another query, paste `supabase/migrations/002_anon_ip_hash.sql` → **Run**
-7. Both should complete without errors
+7. Create another query, paste `supabase/migrations/003_inference_source.sql` → **Run**
+8. All three should complete without errors
 
 ---
 
@@ -145,13 +146,19 @@ Stripe handles recurring subscriptions (€5/month and €48/year).
 
 ---
 
-## 4. Anthropic API Key
+## 4. Anthropic API Key (Optional)
+
+As of v0.2, VersionLens has a deterministic in-house keyword classifier that handles non-conventional commits without needing an LLM. The Anthropic API is now **optional** — only set it up if you want LLM precision for the few commits the classifier flags as low-confidence.
+
+To enable the LLM fallback:
 
 1. Go to [console.anthropic.com](https://console.anthropic.com)
 2. Sign in → go to **API Keys**
 3. Click **Create Key**
 4. Copy it → `ANTHROPIC_API_KEY` (starts with `sk-ant-`)
 5. (Optional) Set `ANTHROPIC_MODEL=claude-haiku-4-5-20251001` in your environment if you want to override the default
+
+To **skip** the LLM entirely: leave `ANTHROPIC_API_KEY` blank in your environment. The scan path will short-circuit to the in-house classifier, no external calls made.
 
 ---
 
@@ -179,7 +186,7 @@ Collect all values and fill in your CapRover environment:
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Settings → API | `https://abc123.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Settings → API (anon) | `eyJ0eXAi...` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Settings → API (service_role) | `eyJ0eXAi...` |
-| `ANTHROPIC_API_KEY` | Anthropic Console → API Keys | `sk-ant-...` |
+| `ANTHROPIC_API_KEY` | Anthropic Console → API Keys (**optional**) | `sk-ant-...` or blank |
 | `ANTHROPIC_MODEL` | (optional, defaults to Haiku) | `claude-haiku-4-5-20251001` |
 | `GITHUB_TOKEN` | GitHub → Settings → Tokens (optional) | `ghp_...` |
 | `STRIPE_SECRET_KEY` | Stripe → Developers → API Keys (Secret) | `sk_live_...` |

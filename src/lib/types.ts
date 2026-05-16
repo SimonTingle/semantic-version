@@ -9,7 +9,7 @@ export interface RawCommit {
 
 export interface ClassifiedCommit extends RawCommit {
   bump: Bump;
-  source: 'heuristic' | 'ai' | 'cache';
+  source: 'heuristic' | 'inference' | 'ai' | 'cache';
   rationale?: string;
 }
 

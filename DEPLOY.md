@@ -10,7 +10,7 @@ Next.js standalone server. CapRover builds the image straight from this repo.
    - Create an OAuth 2.0 Client (Web application).
    - Add `https://<project-ref>.supabase.co/auth/v1/callback` as an authorized redirect URI.
    - Copy Client ID + Secret into the Supabase Google provider form.
-3. **SQL editor**: run `supabase/migrations/001_init.sql`, then `supabase/migrations/002_anon_ip_hash.sql`.
+3. **SQL editor**: run, in order, `supabase/migrations/001_init.sql`, `supabase/migrations/002_anon_ip_hash.sql`, then `supabase/migrations/003_inference_source.sql`.
 4. Copy these from **Project Settings → API**:
    - `Project URL` → `NEXT_PUBLIC_SUPABASE_URL`
    - `anon` public key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -29,10 +29,17 @@ Next.js standalone server. CapRover builds the image straight from this repo.
    - `customer.subscription.deleted`
    Copy the signing secret → `STRIPE_WEBHOOK_SECRET`.
 
-## 3. Anthropic
+## 3. Anthropic (optional)
 
-Create an API key at console.anthropic.com → `ANTHROPIC_API_KEY`.
-Default model is `claude-haiku-4-5-20251001` (fast + cheap). Override with `ANTHROPIC_MODEL` if needed.
+VersionLens v0.2 ships with a deterministic in-house keyword classifier that
+handles non-conventional commits without an LLM. The Anthropic API is now an
+**optional** fallback — set `ANTHROPIC_API_KEY` only if you want LLM precision
+for the small subset of commits the classifier marks as low-confidence.
+
+If you want to enable it: create an API key at console.anthropic.com →
+`ANTHROPIC_API_KEY`. Default model is `claude-haiku-4-5-20251001` (fast +
+cheap). Override with `ANTHROPIC_MODEL` if needed. Leave `ANTHROPIC_API_KEY`
+blank to disable the LLM entirely.
 
 ## 4. GitHub (optional but recommended)
 
