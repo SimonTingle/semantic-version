@@ -1,14 +1,16 @@
 # VersionLens
 
 Infer the semantic version of any public GitHub repo by walking its commit history.
-Heuristic first (Conventional Commits), AI fallback (Claude) for everything else.
+Conventional Commits first, then an in-house deterministic keyword classifier, with
+the Anthropic Claude API as an optional fallback for genuinely ambiguous commits.
 Starts from `0.0.0`.
 
 ## Stack
 - Next.js 14 (App Router, TypeScript, standalone build)
 - Tailwind CSS — modern dark UI, mobile-first
 - Supabase — Postgres + Google OAuth + RLS
-- Anthropic Claude API — commit classification
+- In-house keyword inference engine — deterministic, free, private
+- Anthropic Claude API — **optional** fallback for low-confidence commits
 - Stripe — €5/month subscription
 - Octokit — GitHub REST API
 
@@ -32,10 +34,14 @@ See `DEPLOY.md` for CapRover + Supabase + Stripe setup.
 
 ## Architecture
 
+Classification pipeline: `cache → heuristic → inference → ai`. Each tier owns
+the commits the previous tier passed on.
+
 - `src/lib/heuristic.ts` — Conventional Commits classifier (free, instant).
-- `src/lib/ai.ts` — Claude fallback in batches of 25, ephemeral cache control.
+- `src/lib/inference.ts` — deterministic keyword classifier with confidence scoring. Covers breaking phrases, feature/patch verbs, doc/test/CI signals, etc.
+- `src/lib/ai.ts` — optional Claude fallback. Only runs when `ANTHROPIC_API_KEY` is set, and only for commits the inference engine marked `low` confidence.
 - `src/lib/semver.ts` — chronological version walk from `0.0.0`. Pre-1.0 repos use the conservative `0.x` rule (breaking → minor).
-- `src/lib/scan.ts` — orchestrator: GitHub fetch → cache check → heuristic → AI → compute version → persist.
+- `src/lib/scan.ts` — orchestrator: GitHub fetch → cache check → heuristic → inference → optional AI → compute version → persist.
 - `commit_classifications` table caches every SHA → bump answer. Re-scans are free.
 
 ## Known limits in v1
