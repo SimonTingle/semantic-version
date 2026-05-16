@@ -1,18 +1,24 @@
 import { NextResponse } from 'next/server';
-import { stripe, PRICE_ID } from '@/lib/stripe';
+import { stripe, priceFor, type Plan } from '@/lib/stripe';
 import { supabaseServer } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function POST() {
+export async function POST(req: Request) {
   const sb = await supabaseServer();
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return NextResponse.json({ error: 'sign in first' }, { status: 401 });
 
   const admin = supabaseAdmin();
   if (!admin) return NextResponse.json({ error: 'server misconfigured' }, { status: 500 });
+
+  let plan: Plan = 'monthly';
+  try {
+    const body = await req.json();
+    if (body?.plan === 'yearly') plan = 'yearly';
+  } catch { /* empty body is fine */ }
 
   const { data: profile } = await admin
     .from('profiles')
@@ -34,7 +40,7 @@ export async function POST() {
   const session = await stripe().checkout.sessions.create({
     customer: customerId,
     mode: 'subscription',
-    line_items: [{ price: PRICE_ID, quantity: 1 }],
+    line_items: [{ price: priceFor(plan), quantity: 1 }],
     success_url: `${origin}/account?checkout=success`,
     cancel_url: `${origin}/pricing?checkout=cancelled`,
     allow_promotion_codes: true,

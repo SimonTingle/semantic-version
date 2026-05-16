@@ -15,10 +15,17 @@ export interface QuotaContext {
   userId: string | null;
   subscribed: boolean;
   anonFingerprint: string;
+  anonIpHash: string;
   scansUsed: number;
 }
 
-async function anonFingerprint(): Promise<string> {
+function clientIp(h: Headers): string {
+  const xff = h.get('x-forwarded-for');
+  if (xff) return xff.split(',', 1)[0].trim();
+  return h.get('x-real-ip') ?? h.get('cf-connecting-ip') ?? '';
+}
+
+async function anonHashes(): Promise<{ fingerprint: string; ipHash: string }> {
   const c = await cookies();
   let id = c.get(ANON_COOKIE)?.value;
   if (!id) {
@@ -27,25 +34,32 @@ async function anonFingerprint(): Promise<string> {
   }
   const h = await headers();
   const ua = h.get('user-agent') ?? '';
-  return crypto.createHash('sha256').update(`${id}::${ua}`).digest('hex').slice(0, 32);
+  const ip = clientIp(h);
+  const fingerprint = crypto.createHash('sha256').update(`${id}::${ua}`).digest('hex').slice(0, 32);
+  const ipHash = ip ? crypto.createHash('sha256').update(`ip::${ip}`).digest('hex').slice(0, 32) : '';
+  return { fingerprint, ipHash };
 }
 
 export async function loadQuotaContext(): Promise<QuotaContext> {
   const sb = await supabaseServer();
   const { data: { user } } = await sb.auth.getUser();
-  const fp = await anonFingerprint();
+  const { fingerprint, ipHash } = await anonHashes();
 
   if (!user) {
     const admin = supabaseAdmin();
     let scansUsed = 0;
     if (admin) {
+      // OR across cookie fingerprint and IP hash — closes the incognito re-roll loophole.
+      const filter = ipHash
+        ? `anon_fingerprint.eq.${fingerprint},anon_ip_hash.eq.${ipHash}`
+        : `anon_fingerprint.eq.${fingerprint}`;
       const { count } = await admin
         .from('scans')
         .select('*', { count: 'exact', head: true })
-        .eq('anon_fingerprint', fp);
+        .or(filter);
       scansUsed = count ?? 0;
     }
-    return { userId: null, subscribed: false, anonFingerprint: fp, scansUsed };
+    return { userId: null, subscribed: false, anonFingerprint: fingerprint, anonIpHash: ipHash, scansUsed };
   }
 
   const admin = supabaseAdmin();
@@ -59,7 +73,7 @@ export async function loadQuotaContext(): Promise<QuotaContext> {
     subscribed = ['active', 'trialing'].includes(profile.data?.subscription_status ?? '');
     scansUsed = scanCount.count ?? 0;
   }
-  return { userId: user.id, subscribed, anonFingerprint: fp, scansUsed };
+  return { userId: user.id, subscribed, anonFingerprint: fingerprint, anonIpHash: ipHash, scansUsed };
 }
 
 export function decide(ctx: QuotaContext): QuotaDecision {
@@ -91,6 +105,7 @@ export async function recordScan(args: {
   await admin.from('scans').insert({
     user_id: args.ctx.userId,
     anon_fingerprint: args.ctx.userId ? null : args.ctx.anonFingerprint,
+    anon_ip_hash: args.ctx.userId ? null : (args.ctx.anonIpHash || null),
     owner: args.owner,
     repo: args.repo,
     inferred_version: args.inferredVersion,

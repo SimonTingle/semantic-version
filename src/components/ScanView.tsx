@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PaywallModal } from './PaywallModal';
+import { RepoLensButton } from './RepoLensButton';
 import type { ScanResult, Bump } from '@/lib/types';
 
 interface QuotaDecision {
@@ -28,17 +29,25 @@ export function ScanView({ owner, repo, defaultBranch, description, avatarUrl, s
   const [head, setHead] = useState('');
   const ranOnce = useRef(false);
 
-  async function scan(compareBase?: string, compareHead?: string) {
+  async function scan(opts: { compareBase?: string; compareHead?: string; deep?: boolean } = {}) {
     setPhase('scanning'); setError(null);
     const res = await fetch('/api/scan', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ owner, repo, base: compareBase || undefined, head: compareHead || undefined }),
+      body: JSON.stringify({
+        owner, repo,
+        base: opts.compareBase || undefined,
+        head: opts.compareHead || undefined,
+        deep: opts.deep || undefined,
+      }),
     });
     const data = await res.json();
     if (res.status === 402) {
       const d = data.decision as QuotaDecision;
-      setPaywall({ reason: d.reason as 'needs-sign-in' | 'needs-subscription', scansUsed: d.scansUsed, limit: d.limit ?? 0 });
+      const reason = data.error === 'deep-scan-requires-subscription'
+        ? 'needs-subscription'
+        : (d.reason as 'needs-sign-in' | 'needs-subscription');
+      setPaywall({ reason, scansUsed: d.scansUsed, limit: d.limit ?? 0 });
       setPhase('paywall');
       return;
     }
@@ -52,7 +61,7 @@ export function ScanView({ owner, repo, defaultBranch, description, avatarUrl, s
   useEffect(() => {
     if (ranOnce.current) return;
     ranOnce.current = true;
-    scan();
+    scan({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -67,7 +76,13 @@ export function ScanView({ owner, repo, defaultBranch, description, avatarUrl, s
           {phase === 'done' && result && <VersionDisplay result={result} />}
         </div>
         <div className="card p-5 sm:p-6 space-y-5">
-          <ComparePanel onCompare={(b, h) => { setBase(b); setHead(h); scan(b, h); }} base={base} head={head} defaultBranch={defaultBranch} />
+          <RepoLensButton owner={owner} repo={repo} />
+          <DeepScanPanel
+            onDeep={() => scan({ compareBase: base, compareHead: head, deep: true })}
+            currentDepth={result?.commitsAnalyzed}
+            truncated={result?.truncated}
+          />
+          <ComparePanel onCompare={(b, h) => { setBase(b); setHead(h); scan({ compareBase: b, compareHead: h }); }} base={base} head={head} defaultBranch={defaultBranch} />
           {result && <BadgeSnippet owner={owner} repo={repo} />}
           {result && <ChangelogButton owner={owner} repo={repo} commits={result.classifications} />}
         </div>
@@ -154,6 +169,22 @@ function Stat({ label, value }: { label: string; value: string }) {
     <div className="rounded-xl border border-ink-800 bg-ink-900/60 px-3 py-2.5">
       <p className="text-[10px] uppercase tracking-wider text-ink-400">{label}</p>
       <p className="text-base font-medium tabular">{value}</p>
+    </div>
+  );
+}
+
+function DeepScanPanel({ onDeep, currentDepth, truncated }: { onDeep: () => void; currentDepth?: number; truncated?: boolean }) {
+  return (
+    <div>
+      <h3 className="font-medium tracking-tight flex items-center gap-2">
+        Deep scan
+        <span className="chip bg-accent/15 text-accent-400 border border-accent/30 text-[10px]">Pro</span>
+      </h3>
+      <p className="text-xs text-ink-400 mt-1">
+        Walk up to 10,000 commits instead of the default 1,000.
+        {typeof currentDepth === 'number' && <> Current scan: {currentDepth.toLocaleString()} commits{truncated ? ' (truncated)' : ''}.</>}
+      </p>
+      <button onClick={onDeep} className="btn-secondary mt-3 w-full text-sm">Run deep scan</button>
     </div>
   );
 }

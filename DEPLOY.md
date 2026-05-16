@@ -10,7 +10,7 @@ Next.js standalone server. CapRover builds the image straight from this repo.
    - Create an OAuth 2.0 Client (Web application).
    - Add `https://<project-ref>.supabase.co/auth/v1/callback` as an authorized redirect URI.
    - Copy Client ID + Secret into the Supabase Google provider form.
-3. **SQL editor**: paste `supabase/migrations/001_init.sql` and run it.
+3. **SQL editor**: run `supabase/migrations/001_init.sql`, then `supabase/migrations/002_anon_ip_hash.sql`.
 4. Copy these from **Project Settings → API**:
    - `Project URL` → `NEXT_PUBLIC_SUPABASE_URL`
    - `anon` public key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -19,7 +19,9 @@ Next.js standalone server. CapRover builds the image straight from this repo.
 
 ## 2. Stripe
 
-1. Create a Product **VersionLens Pro** with a recurring €5/month price. Copy the price id → `STRIPE_PRICE_ID`.
+1. Create a Product **VersionLens Pro** with two recurring prices on the same product:
+   - €5 / month → copy the price id → `STRIPE_PRICE_ID`
+   - €48 / year → copy the price id → `STRIPE_YEARLY_PRICE_ID`
 2. From **Developers → API keys**: copy the secret key → `STRIPE_SECRET_KEY`.
 3. **Developers → Webhooks → Add endpoint** → `https://versionlens.example.com/api/stripe/webhook`. Subscribe to:
    - `customer.subscription.created`

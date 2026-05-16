@@ -4,10 +4,13 @@ import { loadQuotaContext, decide, recordScan } from '@/lib/quota';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
+export const maxDuration = 300;
+
+const SHALLOW_MAX = 1000;
+const DEEP_MAX = 10000;
 
 export async function POST(req: Request) {
-  let body: { owner?: string; repo?: string; base?: string; head?: string; maxCommits?: number };
+  let body: { owner?: string; repo?: string; base?: string; head?: string; deep?: boolean };
   try {
     body = await req.json();
   } catch {
@@ -21,11 +24,17 @@ export async function POST(req: Request) {
   const ctx = await loadQuotaContext();
   const decision = decide(ctx);
   if (!decision.allowed) {
+    return NextResponse.json({ error: 'quota', decision }, { status: 402 });
+  }
+
+  // Deep scan (10k commits) is gated to subscribers.
+  if (body.deep && !ctx.subscribed) {
     return NextResponse.json(
-      { error: 'quota', decision },
+      { error: 'deep-scan-requires-subscription', decision },
       { status: 402 },
     );
   }
+  const maxCommits = body.deep ? DEEP_MAX : SHALLOW_MAX;
 
   try {
     const result = await runScan({
@@ -33,7 +42,7 @@ export async function POST(req: Request) {
       repo,
       base: body.base,
       head: body.head,
-      maxCommits: body.maxCommits,
+      maxCommits,
     });
     await recordScan({
       ctx,
