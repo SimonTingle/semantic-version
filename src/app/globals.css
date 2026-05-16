@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+html, body { height: 100%; }
+body {
+  background:
+    radial-gradient(60rem 30rem at 80% -10%, rgba(124, 92, 255, 0.18), transparent 60%),
+    radial-gradient(50rem 30rem at -10% 10%, rgba(60, 200, 255, 0.10), transparent 60%),
+    #0a0d1f;
+  color: #eceef5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Subtle grid for the hero */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(ellipse at center, black 40%, transparent 75%);
+}
+
+.card {
+  @apply rounded-2xl border border-ink-700/60 bg-ink-900/60 backdrop-blur-md shadow-card;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50 disabled:cursor-not-allowed;
+}
+.btn-primary { @apply btn bg-accent hover:bg-accent-600 text-white shadow-glow; }
+.btn-secondary { @apply btn bg-ink-800 hover:bg-ink-700 text-ink-100 border border-ink-700; }
+.btn-ghost { @apply btn text-ink-200 hover:bg-ink-800/80; }
+
+.chip {
+  @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium;
+}
+
+.input {
+  @apply w-full rounded-xl bg-ink-900/80 border border-ink-700 px-4 py-3 text-ink-50 placeholder:text-ink-400
+         focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30 transition;
+}
+
+/* Prevent layout shift from long version numbers / repo names on narrow screens */
+.tabular { font-variant-numeric: tabular-nums; }
+.word-break { word-break: break-word; overflow-wrap: anywhere; }
