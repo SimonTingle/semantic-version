@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PaywallModal } from './PaywallModal';
+import { RepoLensButton } from './RepoLensButton';
 import type { ScanResult, Bump } from '@/lib/types';
 
 interface QuotaDecision {
@@ -75,6 +76,7 @@ export function ScanView({ owner, repo, defaultBranch, description, avatarUrl, s
           {phase === 'done' && result && <VersionDisplay result={result} />}
         </div>
         <div className="card p-5 sm:p-6 space-y-5">
+          <RepoLensButton owner={owner} repo={repo} />
           <DeepScanPanel
             onDeep={() => scan({ compareBase: base, compareHead: head, deep: true })}
             currentDepth={result?.commitsAnalyzed}
