@@ -1,13 +1,22 @@
 'use client';
 import { useState } from 'react';
+import type { Plan } from '@/lib/stripe';
 
-export function SubscribeButton({ label = 'Subscribe — €5/month' }: { label?: string }) {
+interface Props { plan?: Plan; label?: string; variant?: 'primary' | 'secondary' }
+
+export function SubscribeButton({ plan = 'monthly', label, variant = 'primary' }: Props) {
   const [busy, setBusy] = useState(false);
+  const defaultLabel = plan === 'yearly' ? 'Subscribe — €48/year' : 'Subscribe — €5/month';
   async function go() {
     setBusy(true);
-    const res = await fetch('/api/checkout', { method: 'POST' });
+    const res = await fetch('/api/checkout', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ plan }),
+    });
     const data = await res.json();
     if (data.url) window.location.href = data.url; else setBusy(false);
   }
-  return <button onClick={go} disabled={busy} className="btn-primary w-full">{busy ? 'Loading…' : label}</button>;
+  const cls = variant === 'primary' ? 'btn-primary' : 'btn-secondary';
+  return <button onClick={go} disabled={busy} className={`${cls} w-full`}>{busy ? 'Loading…' : (label ?? defaultLabel)}</button>;
 }

@@ -9,4 +9,9 @@ export function stripe(): Stripe {
   return cached;
 }
 
-export const PRICE_ID = process.env.STRIPE_PRICE_ID!;
+export type Plan = 'monthly' | 'yearly';
+
+export function priceFor(plan: Plan): string {
+  if (plan === 'yearly') return process.env.STRIPE_YEARLY_PRICE_ID!;
+  return process.env.STRIPE_PRICE_ID!;
+}
