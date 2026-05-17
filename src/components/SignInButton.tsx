@@ -1,21 +1,52 @@
 'use client';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import clsx from 'clsx';
+import { useEffect, useState } from 'react';
 
 interface Props { variant?: 'primary' | 'secondary'; label?: string; next?: string }
 
 export function SignInButton({ variant = 'primary', label = 'Continue with Google', next = '/' }: Props) {
+  const [googleAvailable, setGoogleAvailable] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Check if Google OAuth is enabled in Supabase
+    fetch('/api/auth/providers')
+      .then((res) => res.json())
+      .then((data) => setGoogleAvailable(data.google ?? false))
+      .catch(() => setGoogleAvailable(false));
+  }, []);
+
   async function go() {
+    setLoading(true);
     const sb = supabaseBrowser();
     const origin = window.location.origin;
     await sb.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}` },
     });
+    setLoading(false);
   }
+
+  // Don't render if we're still checking or if Google is not available
+  if (googleAvailable === null) {
+    return null; // Loading state: hide button while checking
+  }
+
+  if (!googleAvailable) {
+    return null; // Google OAuth not enabled: hide button
+  }
+
   return (
-    <button onClick={go} className={clsx(variant === 'primary' ? 'btn-primary' : 'btn-secondary')}>
-      <GoogleIcon /> {label}
+    <button
+      onClick={go}
+      disabled={loading}
+      className={clsx(
+        variant === 'primary' ? 'btn-primary' : 'btn-secondary',
+        loading && 'opacity-50 cursor-not-allowed'
+      )}
+    >
+      <GoogleIcon /> {loading ? 'Signing in...' : label}
     </button>
   );
 }
