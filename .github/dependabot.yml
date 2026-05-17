@@ -1,41 +1,11 @@
 version: 2
 updates:
-  # npm dependencies
   - package-ecosystem: npm
     directory: '/'
     schedule:
       interval: weekly
       day: monday
       time: '03:00'
-    pull-request-branch-name:
-      separator: '/'
-    reviewers:
-      - SimonTingle
-    # Auto-merge patch and minor updates to prod dependencies
-    auto-merge:
-      - match:
-          update-types:
-            - 'semver:patch'
-            - 'semver:minor'
-          dependency-type: 'production'
-    # Manual review required for major updates
-    # (auto-merge not configured for major)
-    allow:
-      - dependency-type: 'production'
-      - dependency-type: 'development'
-    # Group updates by category
-    groups:
-      dev-dependencies:
-        dependency-type: 'development'
-      prod-dependencies:
-        dependency-type: 'production'
-
-  # Docker image
-  - package-ecosystem: docker
-    directory: '/'
-    schedule:
-      interval: weekly
-      day: monday
-      time: '03:00'
+    open-pull-requests-limit: 10
     reviewers:
       - SimonTingle
