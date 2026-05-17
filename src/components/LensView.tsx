@@ -53,7 +53,7 @@ export function LensView({ owner, repo }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col" style={{ background: '#000005' }}>
+    <div className="fixed inset-0 z-40 flex flex-col" style={{ background: '#000005' }}>
       <header className="relative z-10 flex items-center gap-3 px-4 sm:px-6 py-3 border-b border-white/10 shrink-0"
               style={{ background: 'rgba(5,5,10,0.85)' }}>
         <button
