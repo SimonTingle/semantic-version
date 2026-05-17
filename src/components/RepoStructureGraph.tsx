@@ -9,8 +9,9 @@ import type { RepoGraph, RepoGraphNode, RepoGraphLink } from '@/lib/repoTree';
 const ForceGraph3D = dynamic(() => import('react-force-graph-3d'), { ssr: false });
 
 interface ForceGraphHandle {
-  d3Force: (name: string) => unknown;
+  d3Force: (name: string, force?: unknown) => unknown;
   cameraPosition: (pos: { x: number; y: number; z: number }, look: { x: number; y: number; z: number }, ms: number) => void;
+  zoomToFit: (ms?: number, padding?: number) => void;
 }
 
 interface Props { graph: RepoGraph }
@@ -36,6 +37,10 @@ export default function RepoStructureGraph({ graph }: Props) {
     if (linkForce?.distance) linkForce.distance((l) => (l.type === 'gravity' ? 120 : 40));
   }, [data]);
 
+  function handleEngineStop() {
+    ref.current?.zoomToFit(400, 80);
+  }
+
   return (
     <ForceGraph3D
       ref={ref as never}
@@ -49,6 +54,7 @@ export default function RepoStructureGraph({ graph }: Props) {
       linkColor={((raw: unknown) => ((raw as RepoGraphLink).type === 'gravity' ? '#666666' : '#333333')) as never}
       linkWidth={((raw: unknown) => ((raw as RepoGraphLink).type === 'gravity' ? 1.5 : 0.5)) as never}
       linkOpacity={0.4}
+      onEngineStop={handleEngineStop as never}
       nodeThreeObject={((raw: unknown) => {
         const n = raw as RepoGraphNode;
         const kb = Math.max(0.01, n.size / 1024);
