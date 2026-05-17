@@ -18,9 +18,10 @@ interface Props {
   description: string | null;
   avatarUrl: string | null;
   stars: number;
+  isPro?: boolean;
 }
 
-export function ScanView({ owner, repo, defaultBranch, description, avatarUrl, stars }: Props) {
+export function ScanView({ owner, repo, defaultBranch, description, avatarUrl, stars, isPro = false }: Props) {
   const [phase, setPhase] = useState<'idle' | 'scanning' | 'done' | 'paywall' | 'error'>('idle');
   const [result, setResult] = useState<ScanResult | null>(null);
   const [paywall, setPaywall] = useState<{ reason: 'needs-sign-in' | 'needs-subscription'; scansUsed: number; limit: number } | null>(null);
@@ -76,11 +77,12 @@ export function ScanView({ owner, repo, defaultBranch, description, avatarUrl, s
           {phase === 'done' && result && <VersionDisplay result={result} />}
         </div>
         <div className="card p-5 sm:p-6 space-y-5">
-          <RepoLensButton owner={owner} repo={repo} />
+          <RepoLensButton owner={owner} repo={repo} isPro={isPro} />
           <DeepScanPanel
             onDeep={() => scan({ compareBase: base, compareHead: head, deep: true })}
             currentDepth={result?.commitsAnalyzed}
             truncated={result?.truncated}
+            isPro={isPro}
           />
           <ComparePanel onCompare={(b, h) => { setBase(b); setHead(h); scan({ compareBase: b, compareHead: h }); }} base={base} head={head} defaultBranch={defaultBranch} />
           {result && <BadgeSnippet owner={owner} repo={repo} />}
@@ -159,7 +161,7 @@ function VersionDisplay({ result }: { result: ScanResult }) {
       </div>
       {result.truncated && (
         <p className="mt-4 text-xs text-amber-300/90">
-          History truncated at 1,000 commits — earlier history is ignored. Subscribers can unlock deeper history.
+          History truncated at 1,000 commits — earlier history is ignored. Use Deep scan to walk up to 10,000 commits.
         </p>
       )}
     </div>
@@ -175,12 +177,12 @@ function Stat({ label, value, title }: { label: string; value: string; title?: s
   );
 }
 
-function DeepScanPanel({ onDeep, currentDepth, truncated }: { onDeep: () => void; currentDepth?: number; truncated?: boolean }) {
+function DeepScanPanel({ onDeep, currentDepth, truncated, isPro }: { onDeep: () => void; currentDepth?: number; truncated?: boolean; isPro?: boolean }) {
   return (
     <div>
       <h3 className="font-medium tracking-tight flex items-center gap-2">
         Deep scan
-        <span className="chip bg-accent/15 text-accent-400 border border-accent/30 text-[10px]">Pro</span>
+        {!isPro && <span className="chip bg-accent/15 text-accent-400 border border-accent/30 text-[10px]">Pro</span>}
       </h3>
       <p className="text-xs text-ink-400 mt-1">
         Walk up to 10,000 commits instead of the default 1,000.

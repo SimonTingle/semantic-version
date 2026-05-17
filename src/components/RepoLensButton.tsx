@@ -2,14 +2,14 @@
 import { useState } from 'react';
 import { RepoDisplayModal } from './RepoDisplayModal';
 
-export function RepoLensButton({ owner, repo }: { owner: string; repo: string }) {
+export function RepoLensButton({ owner, repo, isPro }: { owner: string; repo: string; isPro?: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <>
       <div>
         <h3 className="font-medium tracking-tight flex items-center gap-2">
           3D repo lens
-          <span className="chip bg-accent/15 text-accent-400 border border-accent/30 text-[10px]">Pro</span>
+          {!isPro && <span className="chip bg-accent/15 text-accent-400 border border-accent/30 text-[10px]">Pro</span>}
         </h3>
         <p className="text-xs text-ink-400 mt-1">
           Open this repository as an interactive 3D graph — folders as suns, files as planets.
