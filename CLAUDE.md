@@ -25,8 +25,8 @@ The following automated workflows run on every push and PR:
 
 ### 3. npm Audit (Supply Chain)
 - **Trigger:** On every push and PR
-- **What it does:** Runs `npm audit` and fails if high/critical vulns are found in dependencies
-- **Allows:** Low and moderate vulns with explicit audit exceptions in `npm audit exceptions` (if used)
+- **What it does:** Runs `npm audit --audit-level=high` and fails only if high/critical vulns are found
+- **Rationale:** Moderate vulns in transitive dependencies (e.g., postcss via Next.js) are unavoidable without major version bumps; we block only actionable high/critical issues
 
 ### 4. Type Check & Build (CI)
 - **Trigger:** On every push and PR
