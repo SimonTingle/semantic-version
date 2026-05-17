@@ -1,25 +1,23 @@
 'use client';
-import { useState } from 'react';
-import { RepoDisplayModal } from './RepoDisplayModal';
+import Link from 'next/link';
 
 export function RepoLensButton({ owner, repo, isPro }: { owner: string; repo: string; isPro?: boolean }) {
-  const [open, setOpen] = useState(false);
   return (
-    <>
-      <div>
-        <h3 className="font-medium tracking-tight flex items-center gap-2">
-          3D repo lens
-          {!isPro && <span className="chip bg-accent/15 text-accent-400 border border-accent/30 text-[10px]">Pro</span>}
-        </h3>
-        <p className="text-xs text-ink-400 mt-1">
-          Open this repository as an interactive 3D graph — folders as suns, files as planets.
-        </p>
-        <button onClick={() => setOpen(true)} className="btn-secondary mt-3 w-full text-sm inline-flex items-center justify-center gap-2">
-          <LensIcon /> Open 3D lens
-        </button>
-      </div>
-      {open && <RepoDisplayModal owner={owner} repo={repo} onClose={() => setOpen(false)} />}
-    </>
+    <div>
+      <h3 className="font-medium tracking-tight flex items-center gap-2">
+        3D repo lens
+        {!isPro && <span className="chip bg-accent/15 text-accent-400 border border-accent/30 text-[10px]">Pro</span>}
+      </h3>
+      <p className="text-xs text-ink-400 mt-1">
+        Open this repository as an interactive 3D graph — folders as suns, files as planets.
+      </p>
+      <Link
+        href={`/${owner}/${repo}/lens`}
+        className="btn-secondary mt-3 w-full text-sm inline-flex items-center justify-center gap-2"
+      >
+        <LensIcon /> Open 3D lens
+      </Link>
+    </div>
   );
 }
 

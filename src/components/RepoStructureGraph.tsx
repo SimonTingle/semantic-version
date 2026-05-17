@@ -58,6 +58,9 @@ export default function RepoStructureGraph({ graph }: Props) {
     if (charge?.strength) charge.strength((n) => (n.type === 'folder' ? -350 : -40));
     const linkForce = fg.d3Force('link') as { distance?: (fn: (l: LooseLink) => number) => unknown } | null;
     if (linkForce?.distance) linkForce.distance((l) => (l.type === 'gravity' ? 120 : 40));
+    // Strengthen the built-in center force so all nodes stay near the origin.
+    const center = fg.d3Force('center') as { strength?: (v: number) => unknown } | null;
+    if (center?.strength) center.strength(1);
   }, [data]);
 
   function handleEngineStop() {
@@ -70,6 +73,7 @@ export default function RepoStructureGraph({ graph }: Props) {
       graphData={data as never}
       backgroundColor="#000005"
       showNavInfo={false}
+      warmupTicks={60}
       nodeLabel={((raw: unknown) => {
         const n = raw as RepoGraphNode;
         return n.type === 'folder' ? `📁 ${n.id}` : `${n.name} • ${(n.size / 1024).toFixed(1)} KB`;
