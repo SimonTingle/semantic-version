@@ -30,19 +30,29 @@ export function RepoDisplayModal({ owner, repo, onClose }: Props) {
 
   useEffect(() => {
     if (isMobile) return;
-    let cancelled = false;
-    (async () => {
-      const res = await fetch(`/api/repo-tree?repo=${encodeURIComponent(`${owner}/${repo}`)}`);
-      if (res.status === 402) { if (!cancelled) setPaywall(true); return; }
+    const controller = new AbortController();
+
+    async function loadGraph() {
+      const res = await fetch(
+        `/api/repo-tree?repo=${encodeURIComponent(`${owner}/${repo}`)}`,
+        { signal: controller.signal },
+      );
+      if (res.status === 402) { setPaywall(true); return; }
       if (!res.ok) {
         const data = await res.json().catch(() => ({ error: 'failed to load tree' }));
-        if (!cancelled) setError(data.error ?? 'failed to load tree');
+        setError((data as { error?: string }).error ?? 'failed to load tree');
         return;
       }
-      const data = (await res.json()) as RepoGraph;
-      if (!cancelled) setGraph(data);
-    })();
-    return () => { cancelled = true; };
+      setGraph((await res.json()) as RepoGraph);
+    }
+
+    loadGraph().catch(() => {});
+    const intervalId = setInterval(() => loadGraph().catch(() => {}), 60_000);
+
+    return () => {
+      controller.abort();
+      clearInterval(intervalId);
+    };
   }, [owner, repo, isMobile]);
 
   if (paywall) {
@@ -87,6 +97,10 @@ function Legend() {
     <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 card p-3 text-[11px] text-ink-300 space-y-1.5">
       <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-white inline-block" /> folder</div>
       <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-[#3178c6] inline-block" /> file</div>
+      <div className="flex items-center gap-2">
+        <span className="h-2.5 w-2.5 rounded-full inline-block" style={{ background: '#ffdd88', boxShadow: '0 0 4px #ffdd88' }} />
+        recently changed
+      </div>
       <p className="opacity-60 pt-1 border-t border-ink-800">drag to orbit · scroll to zoom · click to fly</p>
     </div>
   );

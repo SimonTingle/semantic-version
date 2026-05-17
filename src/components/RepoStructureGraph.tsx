@@ -27,6 +27,29 @@ export default function RepoStructureGraph({ graph }: Props) {
   }), [graph]);
 
   const ref = useRef<ForceGraphHandle | null>(null);
+  const hotMeshes = useRef<Map<string, THREE.Mesh>>(new Map());
+
+  // Clear stale mesh refs when graph data changes; nodeThreeObject repopulates below.
+  useEffect(() => {
+    hotMeshes.current.clear();
+  }, [data]);
+
+  // Pulse emissiveIntensity each frame for hot nodes.
+  useEffect(() => {
+    let rafId: number;
+    function animate() {
+      const t = Date.now();
+      for (const [, mesh] of hotMeshes.current) {
+        const mat = mesh.material as THREE.MeshLambertMaterial;
+        const heat = (mesh.userData as { heat: number }).heat;
+        const speed = 400 + (1 - heat) * 600;
+        mat.emissiveIntensity = heat * (0.5 + 0.5 * Math.sin(t / speed));
+      }
+      rafId = requestAnimationFrame(animate);
+    }
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
+  }, [data]);
 
   useEffect(() => {
     const fg = ref.current;
@@ -63,7 +86,16 @@ export default function RepoStructureGraph({ graph }: Props) {
           : Math.max(2, Math.min(25, Math.pow(kb, 0.3) * 1.5));
         const geom = new THREE.SphereGeometry(radius, 16, 12);
         const mat = new THREE.MeshLambertMaterial({ color: n.color });
-        return new THREE.Mesh(geom, mat);
+        if (n.heat !== undefined && n.heat > 0) {
+          mat.emissive.set(0xffdd88);
+          mat.emissiveIntensity = 0;
+        }
+        const mesh = new THREE.Mesh(geom, mat);
+        if (n.heat !== undefined && n.heat > 0) {
+          mesh.userData = { heat: n.heat };
+          hotMeshes.current.set(n.id, mesh);
+        }
+        return mesh;
       }) as never}
       onNodeClick={((raw: unknown) => {
         const fg = ref.current;

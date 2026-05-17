@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { octokit, fetchRepoMeta } from '@/lib/github';
+import { octokit, fetchRepoMeta, fetchRecentFileActivity } from '@/lib/github';
 import { buildGraph } from '@/lib/repoTree';
 import { loadQuotaContext } from '@/lib/quota';
 
@@ -26,11 +26,14 @@ export async function GET(req: Request) {
     // Resolve branch → root tree sha
     const { data: branchData } = await gh.repos.getBranch({ owner, repo, branch });
     const treeSha = branchData.commit.commit.tree.sha;
-    const { data } = await gh.git.getTree({ owner, repo, tree_sha: treeSha, recursive: 'true' });
-    const tree = data.tree.map((t) => ({ path: t.path ?? '', type: t.type ?? '', size: t.size }));
-    const graph = buildGraph(`${owner}/${repo}`, branch, tree, data.truncated ?? false);
+    const [treeRes, fileActivity] = await Promise.all([
+      gh.git.getTree({ owner, repo, tree_sha: treeSha, recursive: 'true' }),
+      fetchRecentFileActivity(owner, repo),
+    ]);
+    const tree = treeRes.data.tree.map((t) => ({ path: t.path ?? '', type: t.type ?? '', size: t.size }));
+    const graph = buildGraph(`${owner}/${repo}`, branch, tree, treeRes.data.truncated ?? false, fileActivity);
     return NextResponse.json(graph, {
-      headers: { 'cache-control': 'private, max-age=600, s-maxage=3600' },
+      headers: { 'cache-control': 'private, max-age=60, s-maxage=60' },
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'unknown error';

@@ -1,5 +1,6 @@
 import { Octokit } from '@octokit/rest';
 import type { RawCommit } from './types';
+import type { FileHeat } from './repoTree';
 
 const SERVER_TOKEN = process.env.GITHUB_TOKEN || undefined;
 
@@ -99,6 +100,37 @@ type GhCommit = {
   html_url: string;
   commit: { message: string; author: { date?: string | null } | null };
 };
+
+const HEAT_VALUES = [1, 0.75, 0.5, 0.3, 0.15] as const;
+
+export async function fetchRecentFileActivity(
+  owner: string,
+  repo: string,
+  count = 5,
+): Promise<FileHeat[]> {
+  try {
+    const gh = octokit();
+    const { data: commits } = await gh.repos.listCommits({ owner, repo, per_page: count });
+    const details = await Promise.all(
+      commits.map((c) =>
+        gh.repos.getCommit({ owner, repo, ref: c.sha }).catch(() => null),
+      ),
+    );
+    const heatMap = new Map<string, number>();
+    for (let i = 0; i < details.length; i++) {
+      const detail = details[i];
+      if (!detail) continue;
+      const heat = HEAT_VALUES[i] ?? HEAT_VALUES[4];
+      for (const file of detail.data.files ?? []) {
+        const existing = heatMap.get(file.filename);
+        if (existing === undefined || heat > existing) heatMap.set(file.filename, heat);
+      }
+    }
+    return Array.from(heatMap.entries()).map(([path, heat]) => ({ path, heat }));
+  } catch {
+    return [];
+  }
+}
 
 function toRaw(c: GhCommit): RawCommit {
   return {

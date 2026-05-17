@@ -1,6 +1,11 @@
 import { isPathExcluded } from './repoFilter';
 import { colorForFile, extOf, FOLDER_COLOR, ROOT_COLOR } from './repoColors';
 
+export interface FileHeat {
+  path: string;
+  heat: number;
+}
+
 export interface RepoGraphNode {
   id: string;
   name: string;
@@ -8,6 +13,7 @@ export interface RepoGraphNode {
   size: number;          // bytes (folders = sum of contained file sizes)
   color: string;
   ext?: string;
+  heat?: number;         // 0–1; only on recently-touched file nodes
 }
 
 export interface RepoGraphLink {
@@ -30,7 +36,7 @@ interface GhTreeEntry { path: string; type: string; size?: number }
 
 const ROOT = '/';
 
-export function buildGraph(repo: string, branch: string, tree: GhTreeEntry[], truncated: boolean): RepoGraph {
+export function buildGraph(repo: string, branch: string, tree: GhTreeEntry[], truncated: boolean, fileActivity: FileHeat[] = []): RepoGraph {
   const nodes = new Map<string, RepoGraphNode>();
   const links: RepoGraphLink[] = [];
 
@@ -66,6 +72,16 @@ export function buildGraph(repo: string, branch: string, tree: GhTreeEntry[], tr
       };
       nodes.set(entry.path, node);
       links.push({ source: parentPath, target: entry.path, type: 'orbit' });
+    }
+  }
+
+  // Stamp heat values onto recently-touched file nodes.
+  if (fileActivity.length > 0) {
+    const heatMap = new Map<string, number>(fileActivity.map((f) => [f.path, f.heat]));
+    for (const node of nodes.values()) {
+      if (node.type !== 'file') continue;
+      const h = heatMap.get(node.id);
+      if (h !== undefined) node.heat = h;
     }
   }
 
