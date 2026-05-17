@@ -8,12 +8,13 @@ const FREE_ANON = Number(process.env.FREE_ANON_SCANS ?? 1);
 const FREE_SIGNED_IN = Number(process.env.FREE_SIGNED_IN_SCANS ?? 2);
 
 export type QuotaDecision =
-  | { allowed: true; reason: 'subscribed' | 'free-anon' | 'free-signed-in'; scansUsed: number; limit: number | null }
+  | { allowed: true; reason: 'subscribed' | 'free-anon' | 'free-signed-in' | 'admin'; scansUsed: number; limit: number | null }
   | { allowed: false; reason: 'needs-sign-in' | 'needs-subscription'; scansUsed: number; limit: number };
 
 export interface QuotaContext {
   userId: string | null;
   subscribed: boolean;
+  isAdmin: boolean;
   anonFingerprint: string;
   anonIpHash: string;
   scansUsed: number;
@@ -59,24 +60,29 @@ export async function loadQuotaContext(): Promise<QuotaContext> {
         .or(filter);
       scansUsed = count ?? 0;
     }
-    return { userId: null, subscribed: false, anonFingerprint: fingerprint, anonIpHash: ipHash, scansUsed };
+    return { userId: null, subscribed: false, isAdmin: false, anonFingerprint: fingerprint, anonIpHash: ipHash, scansUsed };
   }
 
   const admin = supabaseAdmin();
   let scansUsed = 0;
   let subscribed = false;
+  let isAdmin = false;
   if (admin) {
     const [profile, scanCount] = await Promise.all([
-      admin.from('profiles').select('subscription_status').eq('id', user.id).maybeSingle(),
+      admin.from('profiles').select('subscription_status,is_admin').eq('id', user.id).maybeSingle(),
       admin.from('scans').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
     ]);
     subscribed = ['active', 'trialing'].includes(profile.data?.subscription_status ?? '');
+    isAdmin = profile.data?.is_admin ?? false;
     scansUsed = scanCount.count ?? 0;
   }
-  return { userId: user.id, subscribed, anonFingerprint: fingerprint, anonIpHash: ipHash, scansUsed };
+  return { userId: user.id, subscribed, isAdmin, anonFingerprint: fingerprint, anonIpHash: ipHash, scansUsed };
 }
 
 export function decide(ctx: QuotaContext): QuotaDecision {
+  // Admins have unlimited access
+  if (ctx.isAdmin) return { allowed: true, reason: 'admin', scansUsed: ctx.scansUsed, limit: null };
+
   if (ctx.subscribed) return { allowed: true, reason: 'subscribed', scansUsed: ctx.scansUsed, limit: null };
 
   if (!ctx.userId) {
