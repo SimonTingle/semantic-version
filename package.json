@@ -22,7 +22,7 @@
     "react-force-graph-3d": "^1.27.0",
     "semver": "^7.6.3",
     "stripe": "^17.2.0",
-    "three": "^0.171.0"
+    "three": "^0.184.0"
   },
   "devDependencies": {
     "@types/node": "^22.7.5",
