@@ -11,7 +11,7 @@
     "test-inference": "tsx scripts/test-inference.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.96.0",
+    "@anthropic-ai/sdk": "^0.39.0",
     "@octokit/rest": "^21.0.2",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.45.4",
@@ -21,8 +21,8 @@
     "react-dom": "^19.0.0",
     "react-force-graph-3d": "^1.27.0",
     "semver": "^7.6.3",
-    "stripe": "^17.2.0",
-    "three": "^0.184.0"
+    "stripe": "^22.1.1",
+    "three": "^0.171.0"
   },
   "devDependencies": {
     "@types/node": "^22.7.5",
