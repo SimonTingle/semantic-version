@@ -13,9 +13,9 @@ export async function GET(req: Request) {
   const [owner, repo] = slug.split('/', 2);
   if (!owner || !repo) return NextResponse.json({ error: 'repo must be owner/name' }, { status: 400 });
 
-  // Pro-gated. Quota.subscribed comes from profile.subscription_status.
+  // Pro-gated. Allow subscribed users or admins.
   const ctx = await loadQuotaContext();
-  if (!ctx.subscribed) {
+  if (!ctx.subscribed && !ctx.isAdmin) {
     return NextResponse.json({ error: 'repo-lens-requires-subscription' }, { status: 402 });
   }
 

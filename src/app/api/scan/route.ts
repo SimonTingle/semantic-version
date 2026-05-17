@@ -27,8 +27,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'quota', decision }, { status: 402 });
   }
 
-  // Deep scan (10k commits) is gated to subscribers.
-  if (body.deep && !ctx.subscribed) {
+  // Deep scan (10k commits) is gated to subscribers or admins.
+  if (body.deep && !ctx.subscribed && !ctx.isAdmin) {
     return NextResponse.json(
       { error: 'deep-scan-requires-subscription', decision },
       { status: 402 },
