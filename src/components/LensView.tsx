@@ -71,6 +71,14 @@ export function LensView({ owner, repo }: Props) {
         {graph && (
           <span className="text-xs text-ink-500 shrink-0 hidden sm:inline tabular">
             {graph.nodeCount.toLocaleString()} nodes
+            {(() => {
+              const hot = graph.nodes.filter((n) => n.type === 'file' && (n.heat ?? 0) > 0).length;
+              return (
+                <span className={`ml-2 ${hot > 0 ? 'text-amber-300' : 'text-red-400'}`}>
+                  · {hot} hot {hot === 0 && '(no GITHUB_TOKEN?)'}
+                </span>
+              );
+            })()}
             {graph.truncated && <span className="ml-2 text-amber-300">(truncated)</span>}
           </span>
         )}

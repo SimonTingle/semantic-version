@@ -113,7 +113,10 @@ export async function fetchRecentFileActivity(
     const { data: commits } = await gh.repos.listCommits({ owner, repo, per_page: count });
     const details = await Promise.all(
       commits.map((c) =>
-        gh.repos.getCommit({ owner, repo, ref: c.sha }).catch(() => null),
+        gh.repos.getCommit({ owner, repo, ref: c.sha }).catch((err) => {
+          console.warn(`[heat] getCommit ${c.sha.slice(0, 7)} failed:`, err instanceof Error ? err.message : err);
+          return null;
+        }),
       ),
     );
     const heatMap = new Map<string, number>();
@@ -126,8 +129,10 @@ export async function fetchRecentFileActivity(
         if (existing === undefined || heat > existing) heatMap.set(file.filename, heat);
       }
     }
+    console.log(`[heat] ${owner}/${repo}: ${commits.length} commits → ${heatMap.size} hot files (token=${SERVER_TOKEN ? 'set' : 'MISSING'})`);
     return Array.from(heatMap.entries()).map(([path, heat]) => ({ path, heat }));
-  } catch {
+  } catch (err) {
+    console.warn(`[heat] ${owner}/${repo}: fetchRecentFileActivity failed (token=${SERVER_TOKEN ? 'set' : 'MISSING'}):`, err instanceof Error ? err.message : err);
     return [];
   }
 }
