@@ -132,7 +132,11 @@ export async function fetchRecentFileActivity(
     console.log(`[heat] ${owner}/${repo}: ${commits.length} commits → ${heatMap.size} hot files (token=${SERVER_TOKEN ? 'set' : 'MISSING'})`);
     return Array.from(heatMap.entries()).map(([path, heat]) => ({ path, heat }));
   } catch (err) {
-    console.warn(`[heat] ${owner}/${repo}: fetchRecentFileActivity failed (token=${SERVER_TOKEN ? 'set' : 'MISSING'}):`, err instanceof Error ? err.message : err);
+    // Avoid logging sensitive data from API errors (tokens, credentials).
+    // Only log the error type/status, not the full message.
+    const errStr = err instanceof Error ? err.message : String(err);
+    const safeMsg = errStr.includes('401') || errStr.includes('403') ? 'auth failed' : 'api error';
+    console.warn(`[heat] ${owner}/${repo}: fetchRecentFileActivity failed (token=${SERVER_TOKEN ? 'set' : 'MISSING'}): ${safeMsg}`);
     return [];
   }
 }
