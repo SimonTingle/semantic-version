@@ -1,4 +1,4 @@
-// File-extension → hex colour map for the 3D lens. Same palette as simontingle.com.
+// File-extension → hex colour map for the 3D lens.
 
 const EXT_COLORS: Record<string, string> = {
   '.ts': '#3178c6', '.tsx': '#3178c6',

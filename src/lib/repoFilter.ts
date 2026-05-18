@@ -1,5 +1,4 @@
-// Path exclusion rules for the 3D repo lens. Mirrors the rules used on
-// simontingle.com — keeps the graph readable by stripping noise.
+// Path exclusion rules for the 3D repo lens — keeps the graph readable by stripping noise.
 
 const EXCLUDED_FOLDERS = new Set([
   'node_modules', 'venv', '.venv', '__pycache__', 'dist', 'build', 'out',

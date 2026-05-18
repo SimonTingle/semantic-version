@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     await admin.from('profiles').update({ stripe_customer_id: customerId }).eq('id', user.id);
   }
 
-  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? new URL('/', 'http://localhost:3000').origin;
+  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://versionlens.example.com';
   const session = await stripe().checkout.sessions.create({
     customer: customerId,
     mode: 'subscription',
