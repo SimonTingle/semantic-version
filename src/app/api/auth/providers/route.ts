@@ -21,9 +21,10 @@ export async function GET() {
     // We catch that to determine provider status, but don't actually redirect.
     // Note: This is a bit of a hack—there's no official "check provider" API in Supabase.
     // We detect availability by attempting sign-in and checking the error type.
+    const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://versionlens.example.com';
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: 'http://localhost/dummy' }, // dummy URL, we won't use this
+      options: { redirectTo: redirectUrl }, // dummy URL, we won't use this
     });
 
     // If no error, Google is enabled (we got a URL to redirect to)
