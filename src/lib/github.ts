@@ -119,18 +119,30 @@ export async function fetchRecentFileActivity(
         }),
       ),
     );
-    const heatMap = new Map<string, number>();
+    const heatMap = new Map<string, FileHeat>();
     for (let i = 0; i < details.length; i++) {
       const detail = details[i];
       if (!detail) continue;
       const heat = HEAT_VALUES[i] ?? HEAT_VALUES[4];
+      const sha = detail.data.sha.slice(0, 7);
+      const msg = (detail.data.commit.message ?? '').split('\n')[0].slice(0, 120);
       for (const file of detail.data.files ?? []) {
         const existing = heatMap.get(file.filename);
-        if (existing === undefined || heat > existing) heatMap.set(file.filename, heat);
+        // Only overwrite if this commit is more recent (higher heat).
+        if (existing !== undefined && existing.heat >= heat) continue;
+        heatMap.set(file.filename, {
+          path: file.filename,
+          heat,
+          commitSha: sha,
+          commitMsg: msg,
+          diffExcerpt: (file.patch ?? '').slice(0, 600),
+          additions: file.additions ?? 0,
+          deletions: file.deletions ?? 0,
+        });
       }
     }
     console.log(`[heat] ${owner}/${repo}: ${commits.length} commits → ${heatMap.size} hot files (token=${SERVER_TOKEN ? 'set' : 'MISSING'})`);
-    return Array.from(heatMap.entries()).map(([path, heat]) => ({ path, heat }));
+    return Array.from(heatMap.values());
   } catch (err) {
     // Avoid logging sensitive data from API errors (tokens, credentials).
     // Only log the error type/status, not the full message.

@@ -4,6 +4,11 @@ import { colorForFile, extOf, FOLDER_COLOR, ROOT_COLOR } from './repoColors';
 export interface FileHeat {
   path: string;
   heat: number;
+  commitSha?: string;    // 7-char short SHA of most recent commit touching this file
+  commitMsg?: string;    // first line of that commit message
+  diffExcerpt?: string;  // first ~600 chars of unified diff patch
+  additions?: number;
+  deletions?: number;
 }
 
 export interface RepoGraphNode {
@@ -14,6 +19,11 @@ export interface RepoGraphNode {
   color: string;
   ext?: string;
   heat?: number;         // 0–1; only on recently-touched file nodes
+  commitSha?: string;
+  commitMsg?: string;
+  diffExcerpt?: string;
+  additions?: number;
+  deletions?: number;
 }
 
 export interface RepoGraphLink {
@@ -75,13 +85,19 @@ export function buildGraph(repo: string, branch: string, tree: GhTreeEntry[], tr
     }
   }
 
-  // Stamp heat values onto recently-touched file nodes.
+  // Stamp heat values and commit metadata onto recently-touched file nodes.
   if (fileActivity.length > 0) {
-    const heatMap = new Map<string, number>(fileActivity.map((f) => [f.path, f.heat]));
+    const metaMap = new Map<string, FileHeat>(fileActivity.map((f) => [f.path, f]));
     for (const node of nodes.values()) {
       if (node.type !== 'file') continue;
-      const h = heatMap.get(node.id);
-      if (h !== undefined) node.heat = h;
+      const fa = metaMap.get(node.id);
+      if (!fa) continue;
+      node.heat = fa.heat;
+      node.commitSha = fa.commitSha;
+      node.commitMsg = fa.commitMsg;
+      node.diffExcerpt = fa.diffExcerpt;
+      node.additions = fa.additions;
+      node.deletions = fa.deletions;
     }
   }
 
