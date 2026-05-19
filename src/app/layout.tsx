@@ -4,13 +4,28 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 
 export const metadata: Metadata = {
-  title: 'VersionLens — Infer any repo’s semantic version from its commits',
+  title: ‘VersionLens — Infer any repo’s semantic version from its commits’,
   description:
-    'Search a GitHub user, pick a repo, and VersionLens walks every commit (heuristic + AI) to tell you the semantic version that history implies.',
+    ‘Search a GitHub user, pick a repo, and VersionLens walks every commit (heuristic + AI) to tell you the semantic version that history implies.’,
   openGraph: {
-    title: 'VersionLens',
-    description: 'Infer semver from commit history with AI.',
-    type: 'website',
+    title: ‘VersionLens’,
+    description: ‘Infer semver from commit history with AI.’,
+    type: ‘website’,
+    url: ‘https://versionlens.simontingle.com’,
+    images: [
+      {
+        url: ‘https://versionlens.simontingle.com/og-image.png’,
+        width: 1200,
+        height: 630,
+        alt: ‘VersionLens — 3D repo lens with semantic version inference’,
+      },
+    ],
+  },
+  twitter: {
+    card: ‘summary_large_image’,
+    title: ‘VersionLens’,
+    description: ‘Infer semver from commit history with AI.’,
+    images: [‘https://versionlens.simontingle.com/og-image.png’],
   },
 };
 
