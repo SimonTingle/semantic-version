@@ -4,7 +4,7 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 
 export const metadata: Metadata = {
-  title: ‘VersionLens — Infer any repo’s semantic version from its commits’,
+  title: ‘VersionLens — Infer any repo\’s semantic version from its commits’,
   description:
     ‘Search a GitHub user, pick a repo, and VersionLens walks every commit (heuristic + AI) to tell you the semantic version that history implies.’,
   openGraph: {
