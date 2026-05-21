@@ -39,7 +39,7 @@ export function SearchBar() {
             onChange={(e) => setValue(e.target.value)}
             placeholder="GitHub username or owner/repo"
             aria-label="GitHub username or owner/repo"
-            className="input pl-11 text-base sm:text-lg"
+            className="input pl-16 text-base sm:text-lg"
           />
         </div>
         <button type="submit" disabled={busy} className="btn-primary text-base px-6 py-3 sm:py-0 sm:h-[3.25rem]">
