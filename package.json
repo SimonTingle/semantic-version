@@ -1,14 +1,10 @@
 {
-  "name": "versionlens",
-  "version": "0.1.0",
+  "name": "project",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start -p ${PORT:-3000}",
-    "lint": "next lint",
-    "typecheck": "tsc --noEmit",
-    "test-inference": "tsx scripts/test-inference.ts"
+    "build": "node canary.js && tsc",
+    "prepare": "node canary.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.96.0",
